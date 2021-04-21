@@ -1,6 +1,4 @@
 # AWSLabs Challenge
-Deployment of an AWS infrastructure using Terraform
-
 This challenge requires you to create a new VPC in the AWS cloud.
 
 ## Description
@@ -41,7 +39,7 @@ Both subnets should be able to talk each other through the default routing table
     - Created a temporary Gmail account to create the AWS account.
     - Configured MFA on the root account
     - Created a new user and attached only the `SystemAdministrator` policy to it
-    - Generated AWS Key for programmatic access for this new user, in order to use terraform over awscli
+    - Generated AWS Key for programmatic access for this new user, because terraform will use the awscli authentication
 2. ✔️ Setup a new VPC using the details above
     - New VPC: `awslab_vpc`
         - Public subnet: `awslab_sn_public`
@@ -87,9 +85,10 @@ Both subnets should be able to talk each other through the default routing table
 Additional points that I would consider from the beginning for an infrastructure like the one suggested above:
 - A load balancer for the webserver
 - A load balancer for the database
+- Egress service internet for database subnet
 - Minimum of three running instances for both webservers and databases
 - A S3 bucket for images/documents store
-- A EFS for the webserver files
+- An EFS for the webserver files
 
 # Reference
 https://registry.terraform.io/providers/hashicorp/aws/latest/docs
