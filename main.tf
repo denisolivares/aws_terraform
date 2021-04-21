@@ -1,47 +1,60 @@
 # Create a new instance of the latest Ubuntu 20.04 on an
 # t3.micro node with an AWS Tag naming it "HelloWorld"
-provider "aws" {
-  region = "us-east-1"
-}
-
-data "aws_ami" "ubuntu" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.27"
+    }
   }
-
-    filter {
-        name   = "virtualization-type"
-        values = ["hvm"]
-    }
-
-    owners = ["099720109477"] # Canonical
 }
 
-resource "aws_default_vpc" "awslab-vpc" {
-    tags = {
-        Name = "awslab-vpc"
-    }
+provider "aws" {
+  profile = "default"
+  region  = "us-east-2"
 }
+
 resource "aws_vpc" "awslab-vpc" {
     cidr_block = "172.16.0.0/16"
       instance_tenancy = "default"
 
     tags = {
-        Name = "main"
+        Name = "awslab-vpc"
     }
 }
 
-resource "aws_default_subnet" "awslab-subnet-public" {
-    availability_zone = "us-east-1a"
+resource "aws_subnet" "awslab-subnet-public" {
+    vpc_id = aws_vpc.awslab-vpc.id
+    availability_zone = var.availability_zone
     cidr_block = "172.16.1.0/24"
 
   tags = {
-    Name = "Public subnet for COCUS challenge"
+    Name = "Public subnet for COCUS SRE challenge"
   }
 }
+
+resource "aws_subnet" "awslab-subnet-private" {
+    vpc_id = aws_vpc.awslab-vpc.id
+    availability_zone = var.availability_zone
+    cidr_block = "172.16.2.0/24"
+
+  tags = {
+    Name = "Private subnet for COCUS SRE challenge"
+  }
+}
+
+resource "aws_instance" "webserver" {
+  ami           = "ami-023c8dbf8268fb3ca"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.awslab-subnet-public.id
+
+  tags = {
+    Name = "webserver"
+  }
+}
+
+
+/* 
 
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
@@ -52,31 +65,31 @@ resource "aws_internet_gateway" "gw" {
 }
 
 
-resource "aws_default_security_group" "sg-app" {
-  vpc_id = aws_default_vpc.default.id
+resource "aws_default_security_group" "sg-public" {
+    vpc_id = aws_vpc.awslab.id
 
-  ingress {
-    protocol  = -1
-    self      = true
-    from_port = 0
-    to_port   = 0
-  }
+    ingress {
+        protocol  = -1
+        self      = true
+        from_port = 0
+        to_port   = 0
+    }
 
-# SSH access
-  ingress {
-    protocol  = 6
-    from_port = 22
-    to_port   = 22
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+    # SSH access
+    ingress {
+        protocol  = 6
+        from_port = 22
+        to_port   = 22
+        cidr_blocks = ["0.0.0.0/0"]
+    }
 
-# SSH access
-  ingress {
-    protocol  = 6
-    from_port = 22
-    to_port   = 22
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+    # SSH access
+    ingress {
+        protocol  = 6
+        from_port = 22
+        to_port   = 22
+        cidr_blocks = ["0.0.0.0/0"]
+    }
 
 }
 
@@ -98,7 +111,7 @@ resource "aws_instance" "webserver" {
   }
 }
 
-/* resource "aws_instance" "k8sprod" {
+resource "aws_instance" "k8sprod" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.large"
   key_name = "dos_key"
@@ -107,4 +120,6 @@ resource "aws_instance" "webserver" {
   tags = {
     Name = "k8sprod"
   }
-} */
+} 
+
+*/
