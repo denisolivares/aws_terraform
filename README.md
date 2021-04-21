@@ -61,16 +61,16 @@ Both subnets should be able to talk each other through the default routing table
 # Running the AWSLab infrastructure
 - Clone this repository
 - Setup the AWS credentials created for this challenge
-- Save the `.pem` (received via e-mail) on this project directory
-- Check/adjust the permissions for the `.pem` file
-    - `chmod 400 file_name.pem` will adjust it accordingly
+- Save the `dos_key.pem` (received via e-mail) on this project directory
+- Check/adjust the permissions for the `dos_key.pem` file
+    - `chmod 400 dos_key.pem` will adjust it accordingly
 - Run `terraform init` to inialize the terraform
 - Then, run `terraform plan` and check the plan output
 - Now, run `terraform apply` (you can add `--auto-approve`, if you're bold)
 - You're doing great! We have some time until terraform is done, how about drink some water?
 - When terraform is done, it will output the public and private IP adressess from the webserver and the private IP address from the database
 - You ca use the terraform output to note the webserver public IP address and quickly connect to it
-    - `ssh ec2-user@webserver_public_ip -i file_name.pem`
+    - `ssh ec2-user@webserver_public_ip -i dos_key.pem`
     - Testing connection on port 3110:
         - Connect on the database host 
         - Run the command `nc -l 3110` to create a listening service on database host

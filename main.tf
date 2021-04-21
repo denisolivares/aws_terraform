@@ -38,7 +38,7 @@ resource "aws_route_table" "awslab_rt_public" {
     }
 
     tags = {
-        Name = "rt_public"
+        Name = "awslab_rt_public"
     }
 }
 
@@ -48,7 +48,7 @@ resource "aws_route_table" "awslab_rt_private" {
     route = []
 
     tags = {
-        Name = "rt_private"
+        Name = "awslab_rt_private"
     }
 }
 
