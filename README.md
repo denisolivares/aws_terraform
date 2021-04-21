@@ -43,6 +43,9 @@ Both subnets should be able to talk each other through the default routing table
     - Created a new user and attached only the `SystemAdministrator` policy to it
     - Generated AWS Key for programmatic access for this new user, in order to use terraform over awscli
 2. ✔️ Setup a new VPC using the details above
+    - New VPC: `awslab_vpc`
+        - Public subnet: `awslab_sn_public`
+        - Private subnet: `awslab_sn_private`
 3. ✔️ Create Routing table
     - Created two differente routing tables:
         - `awslab_rt_public` for public network (webservers)
@@ -53,7 +56,9 @@ Both subnets should be able to talk each other through the default routing table
     - `awslab_sg_public` for public hosts (webservers)
     - `awslab_sg_private` for private hosts (databases)
 6. ✔️ Create EC2 instance (Red Hat AMI) for webserver Public
+    - Webserver instance: `awslab_webserver`
 7. ✔️ Create EC2 instance (Red Hat AMI) for database Private
+    - Database instance: `awslab_database`
 8. ✔️ Please use your preferred IAC tool and send to us the Github address to the code
     - Used `Terraform`
 9. ✔️ Provide .PEM file to the email that sent you the challenge
@@ -76,7 +81,7 @@ Both subnets should be able to talk each other through the default routing table
         - Run the command `nc -l 3110` to create a listening service on database host
         - Leave the above session running and open a new terminal session
         - Connect on the webserver host
-        - Then, run `telnet database_ip_address` to check if the connection is established
+        - Then, run `telnet database_ip_address 3110` to check if the connection is established
 
 # Personal observations
 Additional points that I would consider from the beginning for an infrastructure like the one suggested above:
