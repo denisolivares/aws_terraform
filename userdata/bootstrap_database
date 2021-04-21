@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Updating server OS
+sudo yum update -y

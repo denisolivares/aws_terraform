@@ -91,14 +91,16 @@ resource "aws_security_group" "awslab_sg_public" {
         from_port = -1
         to_port   = -1
         cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
     }
 
-    # ssh
+    # ssh ipv4
     ingress {
         protocol  = 6
         from_port = 22
         to_port   = 22
         cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
     }
 
     # http
@@ -114,6 +116,7 @@ resource "aws_security_group" "awslab_sg_public" {
         to_port          = 0
         protocol         = "-1"
         cidr_blocks      = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
     }
 
     tags = {
@@ -130,6 +133,7 @@ resource "aws_security_group" "awslab_sg_private" {
         from_port = -1
         to_port   = -1
         cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
     }
 
     # ssh
@@ -146,13 +150,6 @@ resource "aws_security_group" "awslab_sg_private" {
         from_port = 3110
         to_port   = 3110
         cidr_blocks = [aws_subnet.awslab_sn_public.cidr_block]
-    }
-
-    egress {
-        from_port        = 0
-        to_port          = 0
-        protocol         = "-1"
-        cidr_blocks      = ["0.0.0.0/0"]
     }
 
     tags = {
@@ -174,8 +171,7 @@ resource "aws_instance" "awslab_webserver" {
         volume_type   = "gp3"
     }
 
-    
-    user_data = file("./userdata/bootstrap")
+    user_data = file("./userdata/bootstrap_webserver")
 
     tags = {
         Name = "webserver"
@@ -194,6 +190,8 @@ resource "aws_instance" "awslab_database" {
         volume_size = 8
         volume_type   = "gp3"
     }
+
+    user_data = file("./userdata/bootstrap_database")
 
     tags = {
         Name = "database"
