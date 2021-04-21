@@ -1,81 +1,99 @@
-# Create a new instance of the latest Ubuntu 20.04 on an
-# t3.micro node with an AWS Tag naming it "HelloWorld"
 terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.27"
+    required_providers {
+        aws = {
+            source  = "hashicorp/aws"
+            version = "~> 3.27"
+        }
     }
-  }
 }
 
 provider "aws" {
-  profile = "default"
-  region  = "us-east-2"
+    profile = "default"
+    region  = "us-east-2"
 }
 
-resource "aws_vpc" "awslab-vpc" {
+resource "aws_vpc" "awslab_vpc" {
     cidr_block = "172.16.0.0/16"
-      instance_tenancy = "default"
+    instance_tenancy = "default"
 
     tags = {
-        Name = "awslab-vpc"
+        Name = "awslab_vpc"
     }
 }
 
-resource "aws_subnet" "awslab-subnet-public" {
-    vpc_id = aws_vpc.awslab-vpc.id
+resource "aws_internet_gateway" "awslab_igw" {
+    vpc_id = aws_vpc.awslab_vpc.id
+
+    tags = {
+        Name = "awslab_igw"
+    }
+}
+
+resource "aws_route_table" "awslab_rt_public" {
+    vpc_id = aws_vpc.awslab_vpc.id
+
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = aws_internet_gateway.awslab_igw.id
+    }
+
+    tags = {
+        Name = "rt_public"
+    }
+}
+
+resource "aws_route_table" "awslab_rt_private" {
+    vpc_id = aws_vpc.awslab_vpc.id
+
+    route = []
+
+    tags = {
+        Name = "rt_private"
+    }
+}
+
+resource "aws_route_table_association" "awslab_rta_public" {
+    subnet_id      = aws_subnet.awslab_sn_public.id
+    route_table_id = aws_route_table.awslab_rt_public.id
+}
+
+resource "aws_route_table_association" "awslab_rta_private" {
+    subnet_id      = aws_subnet.awslab_sn_private.id
+    route_table_id = aws_route_table.awslab_rt_private.id
+}
+
+resource "aws_subnet" "awslab_sn_public" {
+    vpc_id = aws_vpc.awslab_vpc.id
     availability_zone = var.availability_zone
     cidr_block = "172.16.1.0/24"
 
-  tags = {
-    Name = "Public subnet for COCUS SRE challenge"
-  }
+    tags = {
+        Name = "Public subnet for webserver"
+    }
 }
 
-resource "aws_subnet" "awslab-subnet-private" {
-    vpc_id = aws_vpc.awslab-vpc.id
+resource "aws_subnet" "awslab_sn_private" {
+    vpc_id = aws_vpc.awslab_vpc.id
     availability_zone = var.availability_zone
     cidr_block = "172.16.2.0/24"
 
-  tags = {
-    Name = "Private subnet for COCUS SRE challenge"
-  }
+    tags = {
+        Name = "Private subnet for database"
+    }
 }
 
-resource "aws_instance" "webserver" {
-  ami           = "ami-023c8dbf8268fb3ca"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.awslab-subnet-public.id
+resource "aws_security_group" "awslab_sg_public" {
+    vpc_id = aws_vpc.awslab_vpc.id
 
-  tags = {
-    Name = "webserver"
-  }
-}
-
-
-/* 
-
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "main"
-  }
-}
-
-
-resource "aws_default_security_group" "sg-public" {
-    vpc_id = aws_vpc.awslab.id
-
+    # icmp
     ingress {
-        protocol  = -1
-        self      = true
-        from_port = 0
-        to_port   = 0
+        protocol  = 1
+        from_port = -1
+        to_port   = -1
+        cidr_blocks = ["0.0.0.0/0"]
     }
 
-    # SSH access
+    # ssh
     ingress {
         protocol  = 6
         from_port = 22
@@ -83,43 +101,113 @@ resource "aws_default_security_group" "sg-public" {
         cidr_blocks = ["0.0.0.0/0"]
     }
 
-    # SSH access
+    # http
+    ingress {
+        protocol  = 6
+        from_port = 80
+        to_port   = 80
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    
+    egress {
+        from_port        = 0
+        to_port          = 0
+        protocol         = "-1"
+        cidr_blocks      = ["0.0.0.0/0"]
+    }
+
+    tags = {
+        Name = "Public security group"
+    }
+}
+
+resource "aws_security_group" "awslab_sg_private" {
+    vpc_id = aws_vpc.awslab_vpc.id
+
+    # icmp
+    ingress {
+        protocol  = 1
+        from_port = -1
+        to_port   = -1
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    # ssh
     ingress {
         protocol  = 6
         from_port = 22
         to_port   = 22
-        cidr_blocks = ["0.0.0.0/0"]
+        cidr_blocks = [aws_subnet.awslab_sn_public.cidr_block]
     }
 
+    # database
+    ingress {
+        protocol  = 6
+        from_port = 3110
+        to_port   = 3110
+        cidr_blocks = [aws_subnet.awslab_sn_public.cidr_block]
+    }
+
+    egress {
+        from_port        = 0
+        to_port          = 0
+        protocol         = "-1"
+        cidr_blocks      = ["0.0.0.0/0"]
+    }
+
+    tags = {
+        Name = "Private security group"
+    }
 }
 
+resource "aws_instance" "awslab_webserver" {
+    ami                 = var.ami
+    availability_zone   = var.availability_zone
+    instance_type       = "t2.micro"
+    key_name            = "dos_key"
+    subnet_id           = aws_subnet.awslab_sn_public.id
+    associate_public_ip_address = true
+    vpc_security_group_ids      = [aws_security_group.awslab_sg_public.id]
+    
+    root_block_device {
+        volume_size = 8
+        volume_type   = "gp3"
+    }
 
-resource "aws_key_pair" "dos_key" {
-  key_name   = "dos_key"
-  public_key = file(var.aws_key_pair)
+    
+    user_data = file("./userdata/bootstrap")
+
+    tags = {
+        Name = "webserver"
+    }
 }
 
-resource "aws_instance" "webserver" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.medium"
-  key_name      = "dos_key"
-  subnet_id     = aws_default_subnet.default_az1.id
-  user_data = file("./userdata/bootstrap")
+resource "aws_instance" "awslab_database" {
+    ami                 = var.ami
+    availability_zone   = var.availability_zone
+    instance_type       = "t2.micro"
+    key_name            = "dos_key"
+    subnet_id           = aws_subnet.awslab_sn_private.id
+    vpc_security_group_ids      = [aws_security_group.awslab_sg_private.id]
 
-  tags = {
-    Name = "k8sdev"
-  }
+    root_block_device {
+        volume_size = 8
+        volume_type   = "gp3"
+    }
+
+    tags = {
+        Name = "database"
+    }
 }
 
-resource "aws_instance" "k8sprod" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.large"
-  key_name = "dos_key"
-  subnet_id     = aws_default_subnet.default_az1.id
-  user_data = file("./userdata/bootstrap")
-  tags = {
-    Name = "k8sprod"
-  }
-} 
+output "awslab_webserver_public_ip" {
+  value = [aws_instance.awslab_webserver.public_ip]
+}
 
-*/
+output "awslab_webserver_private_ip" {
+  value = [aws_instance.awslab_webserver.private_ip]
+}
+
+output "awslab_database_private_ip" {
+  value = [aws_instance.awslab_database.private_ip]
+}
