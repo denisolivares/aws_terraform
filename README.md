@@ -72,7 +72,7 @@ Both subnets should be able to talk each other through the default routing table
 - Now, run `terraform apply` (you can add `--auto-approve`, if you're bold)
 - You're doing great! We have some time until terraform is done, how about drink some water?
 - When terraform is done, it will output the public and private IP adressess from the webserver and the private IP address from the database
-- You ca use the terraform output to note the webserver public IP address and quickly connect to it
+- You can use the terraform output to note the webserver public IP address and quickly connect to it
     - `ssh ec2-user@webserver_public_ip -i dos_key.pem`
     - Testing connection on port 3110:
         - Connect on the database host 
